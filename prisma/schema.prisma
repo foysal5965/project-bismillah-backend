@@ -1,0 +1,269 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String     @id @default(uuid())
+  email              String     @unique
+  password           String
+  role               UserRole
+  needPasswordChange Boolean    @default(true)
+  status             UserStatus @default(ACTIVE)
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+  admin              Admin?
+  customer           Customer?
+  Vendor             Vendor?
+  Cart               Cart[]
+  Address            Address[]
+  Checkout           Checkout[]
+
+  @@map("users")
+}
+
+model Admin {
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  profilePhoto  String?
+  contactNumber String
+  address       String
+  isDeleted     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [email], references: [email])
+
+  @@map("admins")
+}
+
+model Customer {
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  profilePhoto  String?
+  contactNumber String
+  address       String?
+  isDeleted     Boolean  @default(false)
+  user          User     @relation(fields: [email], references: [email])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("customers")
+}
+
+model Vendor {
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  profilePhoto  String?
+  contactNumber String
+  address       String?
+  isDeleted     Boolean  @default(false)
+  user          User     @relation(fields: [email], references: [email])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("vendors")
+}
+
+model ProductCategory {
+  id        String    @id @default(uuid())
+  title     String
+  icon      String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  product   Product[]
+
+  @@map("productCategories")
+}
+
+model Brand {
+  id        String    @id @default(uuid())
+  title     String
+  icon      String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  product   Product[]
+
+  @@map("brands")
+}
+
+model Product {
+  id               String          @id @default(uuid())
+  productName      String
+  images           String[]
+  purchasePrize    Float
+  regularSalePrize Float
+  discount         Float?
+  stockStatus      StockStatus     @default(INSTOCK)
+  stockQuantity    Int
+  details          String
+  categoryId       String
+  category         ProductCategory @relation(fields: [categoryId], references: [id])
+  brandId          String
+  brand            Brand           @relation(fields: [brandId], references: [id])
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  CartItem         CartItem[]
+
+  @@map("products")
+}
+
+model Cart {
+  id            String     @id @default(uuid())
+  userId        String // ID of the user who owns this cart
+  user          User       @relation(fields: [userId], references: [id])
+  items         CartItem[] // Relation to CartItem model
+  totalQuantity Int        @default(0) // Total quantity of items in the cart
+  totalPrice    Float      @default(0.0) // Total price of items in the cart
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  Checkout      Checkout[]
+
+  @@map("carts")
+}
+
+model CartItem {
+  id        String   @id @default(uuid())
+  cartId    String
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Int      @default(1) // Quantity of this item in the cart
+  price     Float // Price per unit of this product at the time of adding to cart
+  subTotal  Float // Calculated subtotal = quantity * price
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("cartItems")
+}
+
+model Address {
+  id             String      @id @default(uuid())
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+  addressType    AddressType
+  streetAddress  String
+  city           String
+  state          String?
+  postalCode     String?
+  country        String
+  phoneNumber    String?
+  isDefault      Boolean     @default(false)
+  additionalInfo String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  Checkout       Checkout[]
+
+  @@index([userId, addressType]) // Helps to efficiently query by user and address type
+  @@map("addresses")
+}
+
+model Checkout {
+  id               String        @id @default(uuid())
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           String
+  cartId           String // Optional, references a cart if applicable
+  totalAmount      Float
+  currency         String        @default("USD") // Default currency, can be changed
+  paymentStatus    PaymentStatus @default(PENDING)
+  paymentMethod    paymentMethod @default(CASHONDELIVERY)
+  checkoutDate     DateTime      @default(now())
+  // shippingAddressId Int?          @unique // Nullable if shipping address is not required
+  billingAddressId String // Nullable if billing address is not required
+  discountCode     String? // Optional discount code
+  discountAmount   Float? // Optional discount amount
+  taxAmount        Float? // Optional tax amount
+  shippingFee      Float? // Optional shipping fee
+  orderNotes       String? // Additional notes from the user
+  orderStatus      OrderStatus   @default(PROCESSING)
+  trackingNumber   String?       @unique // Unique tracking number for shipping
+  invoicePdf       String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  // Relations
+  billingAddress Address   @relation(fields: [billingAddressId], references: [id])
+  cart           Cart      @relation(fields: [cartId], references: [id])
+  Payment        Payment[]
+
+  @@index([userId, paymentStatus]) // Helps to efficiently query by user and payment status
+  @@map("checkout")
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  orderId       String // ID of the associated order
+  method        paymentMethod
+  amount        Float
+  status        PaymentStatus // Pending, Completed, Failed, etc.
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  // Fields for online payment
+  transactionId String? // Unique transaction ID for online payments
+  provider      String? // e.g., Stripe, PayPal, etc.
+  // Fields for cash on delivery
+  codConfirmed  Boolean? // Whether the COD was confirmed by the delivery agent
+
+  // Relations
+  order Checkout @relation(fields: [orderId], references: [id])
+
+  @@map("payments")
+}
+
+enum paymentMethod {
+  CASHONDELIVERY
+  ONLINEPAYMENT
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum OrderStatus {
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELED
+}
+
+enum AddressType {
+  SHIPPING
+  BILLING
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  CUSTOMER
+  VENDOR
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+  DELETED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum StockStatus {
+  INSTOCK
+  OUTOFFSTOCK
+}
