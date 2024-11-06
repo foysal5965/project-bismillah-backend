@@ -222,6 +222,33 @@ model Payment {
   @@map("payments")
 }
 
+
+// model Vendor {
+//   id            String      @id @default(uuid())
+//   name          String
+//   contactPerson String
+//   email         String      @unique
+//   phoneNumber   String
+//   address       String
+//   city          String
+//   postalCode    String
+//   country       String
+//   status        VendorStatus @default(ACTIVE)
+//   taxId         String?
+//   website       String?
+//   notes         String?
+//   createdAt     DateTime    @default(now())
+//   updatedAt     DateTime    @updatedAt
+
+//   @@map("vendors")
+// }
+
+enum VendorStatus {
+  ACTIVE
+  INACTIVE
+  BLOCKED
+}
+
 enum paymentMethod {
   CASHONDELIVERY
   ONLINEPAYMENT
