@@ -67,10 +67,21 @@ const getAllFromDB: RequestHandler = catchAsync(async (req: Request, res: Respon
 //     })
 // })
 
+const getByIdFromDB = catchAsync(async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    const result = await productService.getByIdFromDB(id);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Product data fetched",
+        data: result
+    })
+})
 export const productController ={
     createProduct,
-    getAllFromDB
+    getAllFromDB,
     // deleteFromDB,
     // updateIntoDB,
-    // getByIdFromDB
+    getByIdFromDB
 }

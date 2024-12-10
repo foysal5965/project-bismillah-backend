@@ -1,9 +1,10 @@
 {
-  "name": "healtcare-service-backend",
+  "name": "project-bismillah",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
+    "postinstall": "prisma generate",
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "seed": "ts-node-dev --respawn --transpile-only src/seed.ts"

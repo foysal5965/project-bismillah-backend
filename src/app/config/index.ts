@@ -26,5 +26,10 @@ export default {
         cancelUrl: process.env.CANCEL_URL,
         sslPaymentUrl: process.env.SSL_PAYMENT_API,
         sslValidationApi: process.env.SSL_VALIDATION_API
+    },
+    cloudinary:{
+        cloudName: process.env.CLOUD_NAME,
+        cloudApiKey: process.env.CLD_API_KEY,
+        cloudSecret: process.env.CLD_API_SECRET
     }
 }

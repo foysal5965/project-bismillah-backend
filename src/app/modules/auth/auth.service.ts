@@ -33,7 +33,7 @@ const loginUser = async (payload: {
     const accessToken = jwtHelpers.generateToken({
         email: userData.email,
         role: userData.role,
-        userId:userData.id
+        userId: userData.id
     },
         config.jwt.jwt_secret as Secret,
         config.jwt.expires_in as string
@@ -42,7 +42,7 @@ const loginUser = async (payload: {
     const refreshToken = jwtHelpers.generateToken({
         email: userData.email,
         role: userData.role,
-        userId:userData.id
+        userId: userData.id
     },
         config.jwt.refresh_token_secret as Secret,
         config.jwt.refresh_token_expires_in as string
@@ -74,7 +74,7 @@ const refreshToken = async (token: string) => {
     const accessToken = jwtHelpers.generateToken({
         email: userData.email,
         role: userData.role,
-        userId:userData.id
+        userId: userData.id
     },
         config.jwt.jwt_secret as Secret,
         config.jwt.expires_in as string
@@ -100,7 +100,7 @@ const changePassword = async (user: any, payload: any) => {
     const isCorrectPassword: boolean = await bcrypt.compare(payload.oldPassword, userData.password);
 
     if (!isCorrectPassword) {
-        throw new Error("Password incorrect!")
+        throw new Error("Current password is incorrect!")
     }
 
     const hashedPassword: string = await bcrypt.hash(payload.newPassword, 12);
@@ -131,7 +131,7 @@ const forgotPassword = async (payload: { email: string }) => {
     });
 
     const resetPassToken = jwtHelpers.generateToken(
-        { email: userData.email, role: userData.role,userId:userData.id },
+        { email: userData.email, role: userData.role, userId: userData.id },
         config.jwt.reset_pass_secret as Secret,
         config.jwt.reset_pass_token_expires_in as string
     )
@@ -142,24 +142,34 @@ const forgotPassword = async (payload: { email: string }) => {
     await emailSender(
         userData.email,
         `
-        <div>
-            <p>Dear User,</p>
-            <p>Your password reset link 
-                <a href=${resetPassLink}>
-                    <button>
-                        Reset Password
-                    </button>
-                </a>
-            </p>
+       <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #333;">
+    <p>Dear User,</p>
+    <p>Your password reset link is below:</p>
+    <a href="${resetPassLink}" style="text-decoration: none;">
+        <button style="
+            background: linear-gradient(45deg, #4CAF50, #81C784);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        ">
+            Reset Password
+        </button>
+    </a>
+    <p>If you did not request this, please ignore this email.</p>
+    <p>Thank you,<br>Your Company Team</p>
+</div>
 
-        </div>
         `
     )
 };
 
 
-const resetPassword = async (token: string, payload: { id: string, password: string }) => {
-    console.log({ token, payload })
+const resetPassword = async (token: string, payload: { id: string, password: string ,token:string}) => {
+    
 
     const userData = await prisma.user.findUniqueOrThrow({
         where: {
@@ -168,7 +178,7 @@ const resetPassword = async (token: string, payload: { id: string, password: str
         }
     });
 
-    const isValidToken = jwtHelpers.verifyToken(token, config.jwt.reset_pass_secret as Secret)
+    const isValidToken = jwtHelpers.verifyToken(payload.token, config.jwt.reset_pass_secret as Secret)
 
     if (!isValidToken) {
         throw new ApiError(httpStatus.FORBIDDEN, "Forbidden!")

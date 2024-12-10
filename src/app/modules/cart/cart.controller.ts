@@ -35,8 +35,28 @@ const removeItemFromCart = catchAsync(async (req: Request, res: Response) => {
         data: result
     })
 });
+const getAllFromDB = catchAsync(async(req: Request, res: Response)=>{
+    const result = await cartService.getAllFromDB(req.user as IAuthUser)
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "cart fetched successfuly!",
+        data: result
+    })
+})
+const getCartItems = catchAsync(async(req: Request, res: Response)=>{
+    const result = await cartService.getCartItems(req.user as IAuthUser)
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "cart items successfuly!",
+        data: result
+    })
+})
 export const cartController= {
     createCartForUser,
     addItemToCart,
-    removeItemFromCart
+    removeItemFromCart,
+    getAllFromDB,
+    getCartItems
 }

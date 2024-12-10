@@ -3,34 +3,44 @@ import path from "path"
 import { ICloudinaryResponse, IFile } from "../interfaces/file"
 import { v2 as cloudinary } from 'cloudinary';
 import fs from 'fs'
-cloudinary.config({ 
-  cloud_name: 'def4tyoba', 
-  api_key: '764148684859177', 
-  api_secret: 'qT5xDHzwRc9JoWtElV9pmsft0DU' // Click 'View API Keys' above to copy your API secret
+import config from "../config";
+cloudinary.config({
+  cloud_name: config.cloudinary.cloudName,
+  api_key: config.cloudinary.cloudApiKey,
+  api_secret: config.cloudinary.cloudSecret // Click 'View API Keys' above to copy your API secret
 });
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-      cb(null, path.join(process.cwd(), 'uploads'))
-    },
-    filename: function (req, file, cb) {
-      cb(null, file.originalname)
-    }
-  })
-  
-  const upload = multer({ storage: storage })
-  const uploadToCloudinary = async (file: IFile): Promise<ICloudinaryResponse | undefined> => {
+const storage = multer.memoryStorage();
+
+const upload = multer({ storage: storage });
+export const uploadToCloudinary = async (
+  files: IFile | IFile[]
+): Promise<ICloudinaryResponse | ICloudinaryResponse[] | undefined> => {
+  const uploadSingleFile = (file: IFile): Promise<ICloudinaryResponse | undefined> => {
     return new Promise((resolve, reject) => {
-        cloudinary.uploader.upload(file.path,
-            (error: Error, result: ICloudinaryResponse) => {
-                fs.unlinkSync(file.path)
-                if (error) {
-                    reject(error)
-                }
-                else {
-                    resolve(result)
-                }
-            })
-    })
+      const uploadStream = cloudinary.uploader.upload_stream((error, result) => {
+        if (error) {
+          reject(error); // Reject the promise if there's an error
+        } else {
+          //@ts-ignore
+          resolve(result); // Resolve with the upload result
+        }
+      });
+
+      // Pass the file buffer to the Cloudinary upload stream
+      //@ts-ignore
+      uploadStream.end(file.buffer);
+    });
+  };
+
+  // If files is an array, handle multiple uploads
+  if (Array.isArray(files)) {
+    const results = await Promise.all(files.map(uploadSingleFile));
+    const validResults = results.filter((result): result is ICloudinaryResponse => result !== undefined);
+    return validResults;
+  }
+
+  // Otherwise, handle a single file upload
+  return uploadSingleFile(files);
 };
 
 
@@ -38,7 +48,7 @@ const storage = multer.diskStorage({
 export const uploadMultipleFilesToCloudinary = async (files: IFile[]): Promise<ICloudinaryResponse[]> => {
   const uploadPromises = files.map(file => uploadToCloudinary(file));
   const results = await Promise.all(uploadPromises);
-  
+
   // Filter out any undefined values and return only successful uploads
   return results.filter((result): result is ICloudinaryResponse => result !== undefined);
 };
@@ -50,7 +60,7 @@ export const multifileUploader = {
 };
 
 
-  export const fileUploader ={
-    upload,
-    uploadToCloudinary
-  }
+export const fileUploader = {
+  upload,
+  uploadToCloudinary
+}

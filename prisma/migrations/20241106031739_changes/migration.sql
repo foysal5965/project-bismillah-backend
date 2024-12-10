@@ -1,3 +1,0 @@
--- AlterTable
-ALTER TABLE "checkout" ALTER COLUMN "paymentStatus" SET DEFAULT 'PENDING',
-ALTER COLUMN "orderStatus" SET DEFAULT 'PROCESSING';

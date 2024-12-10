@@ -14,7 +14,9 @@ const createCategory = async (req: Request): Promise<ProductCategory> => {
 
     if (file) {
         const uploadToCloudinary = await fileUploader.uploadToCloudinary(file);
-        req.body.icon = uploadToCloudinary?.secure_url
+        if(!Array.isArray(uploadToCloudinary)){
+            req.body.icon = uploadToCloudinary?.secure_url
+        }
     }
     const isExist = await prisma.productCategory.findFirst({
         where: {

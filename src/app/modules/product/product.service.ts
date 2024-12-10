@@ -10,13 +10,13 @@ import { paginationHelper } from "../../helpers/paginationHelper";
 
 const createProduct = async (req: Request): Promise<Product> => {
 
-    const files = req.files as IFile[];
+    const file = req.file as IFile;
 
-    if (files && files.length > 0) {
-        const uploadResults = await uploadMultipleFilesToCloudinary(files);
-
-        // Extract the secure_url from each result and store them in req.body.images
-        req.body.images = uploadResults.map(result => result.secure_url);
+    if (file) {
+        const uploadToCloudinary = await fileUploader.uploadToCloudinary(file);
+        if(!Array.isArray(uploadToCloudinary)){
+            req.body.image = uploadToCloudinary?.secure_url
+        }
     }
     const isExist = await prisma.product.findFirst({
         where: {
@@ -48,7 +48,7 @@ const getAllFromDB = async (params: IProductFilterRequest, options: IPaginationO
     //console.log(filterData);
     if (searchTerm) {
         andConditions.push({
-            OR: ['productName'].map(field => ({
+            OR: ['productName','categoryId','brandId'].map(field => ({
                 [field]: {
                     contains: searchTerm,
                     mode: 'insensitive'
@@ -110,7 +110,18 @@ const getAllFromDB = async (params: IProductFilterRequest, options: IPaginationO
         data: result
     };
 };
+
+const getByIdFromDB = async (id: string): Promise<Product | null> => {
+    const result = await prisma.product.findUnique({
+        where: {
+            id
+        }
+    })
+
+    return result;
+};
 export const productService = {
     createProduct,
-    getAllFromDB
+    getAllFromDB,
+    getByIdFromDB
 }

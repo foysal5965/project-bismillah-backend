@@ -23,7 +23,9 @@ const createAdmin = async (req: Request): Promise<Admin> => {
 
     if (file) {
         const uploadToCloudinary = await fileUploader.uploadToCloudinary(file);
-        req.body.admin.profilePhoto = uploadToCloudinary?.secure_url
+        if (!Array.isArray(uploadToCloudinary)) {
+            req.body.profilePhoto = uploadToCloudinary?.secure_url
+        }
     }
 
     const hashedPassword: string = await bcrypt.hash(req.body.password, 12)
@@ -35,10 +37,17 @@ const createAdmin = async (req: Request): Promise<Admin> => {
     }
 
     const result = await prisma.$transaction(async (transactionClient) => {
-        await transactionClient.user.create({
+        const userCreateData = await transactionClient.user.create({
             data: userData
         });
+        if (userCreateData) {
+            await transactionClient.cart.create({
+                data: {
+                    userId: userCreateData.id
 
+                }
+            })
+        }
         const createdAdminData = await transactionClient.admin.create({
             data: req.body.admin
         });
@@ -61,7 +70,9 @@ const createCustomer = async (req: Request): Promise<Customer> => {
 
     if (file) {
         const uploadToCloudinary = await fileUploader.uploadToCloudinary(file);
-        req.body.customer.profilePhoto = uploadToCloudinary?.secure_url
+        if (!Array.isArray(uploadToCloudinary)) {
+            req.body.profilePhoto = uploadToCloudinary?.secure_url
+        }
     }
 
     const hashedPassword: string = await bcrypt.hash(req.body.password, 12)
@@ -73,9 +84,17 @@ const createCustomer = async (req: Request): Promise<Customer> => {
     }
 
     const result = await prisma.$transaction(async (transactionClient) => {
-        await transactionClient.user.create({
+        const userCreateData = await transactionClient.user.create({
             data: customerData
         });
+        if (userCreateData) {
+            await transactionClient.cart.create({
+                data: {
+                    userId: userCreateData.id
+
+                }
+            })
+        }
 
         const createdCustomerData = await transactionClient.customer.create({
             data: req.body.customer
@@ -99,7 +118,9 @@ const createVendors = async (req: Request): Promise<Vendor> => {
 
     if (file) {
         const uploadToCloudinary = await fileUploader.uploadToCloudinary(file);
-        req.body.vendor.profilePhoto = uploadToCloudinary?.secure_url
+        if (!Array.isArray(uploadToCloudinary)) {
+            req.body.profilePhoto = uploadToCloudinary?.secure_url
+        }
     }
 
     const hashedPassword: string = await bcrypt.hash(req.body.password, 12)
@@ -149,7 +170,7 @@ const getAllFromDB = async (params: any, options: IPaginationOptions) => {
             AND: Object.keys(filterData).map(key => ({
                 [key]: {
                     equals: (filterData as any)[key],
-                     mode: 'insensitive'
+                    mode: 'insensitive'
                 }
             }))
         })
@@ -175,8 +196,8 @@ const getAllFromDB = async (params: any, options: IPaginationOptions) => {
             createdAt: true,
             updatedAt: true,
             admin: true,
-            customer:true,
-            Vendor:true
+            customer: true,
+            Vendor: true
         }
     });
 
@@ -256,7 +277,9 @@ const updateMyProfie = async (user: IAuthUser, req: Request) => {
     const file = req.file as IFile;
     if (file) {
         const uploadToCloudinary = await fileUploader.uploadToCloudinary(file);
-        req.body.profilePhoto = uploadToCloudinary?.secure_url;
+        if (!Array.isArray(uploadToCloudinary)) {
+            req.body.profilePhoto = uploadToCloudinary?.secure_url
+        }
     }
 
     let profileInfo;

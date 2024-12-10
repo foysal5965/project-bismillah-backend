@@ -8,7 +8,13 @@ import { cartController } from './app/modules/cart/cart.controller';
 import auth from './app/middlewares/auth';
 import { UserRole } from '@prisma/client';
 const app: Application = express()
-app.use(cors())
+const allowedOrigins = {
+    origin:'http://localhost:3000',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT','PATCH', 'DELETE', 'OPTIONS'], // Allow necessary methods
+    allowedHeaders: ['Content-Type', 'Authorization'], // Allow necessary headers
+}
+app.use(cors(allowedOrigins))
 app.use(cookieParser());
 
 //parser

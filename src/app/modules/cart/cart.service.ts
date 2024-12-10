@@ -122,9 +122,29 @@ const removeItemFromCart = async (productId: string, user: IAuthUser) => {
     // Update cart totals after removing the item
     await updateCartTotals(cartId);
 }
+const getAllFromDB = async (user: IAuthUser) => {
+    const result = await prisma.cart.findFirst({
+        where: {
+            userId: user?.userId
+        }
+    })
+    return result
+}
 
+const getCartItems = async (user: IAuthUser) => {
+    const result = await prisma.cartItem.findFirst({
+        where: {
+            cart:{
+                userId: user?.userId
+            }
+        }
+    })
+    return result
+}
 export const cartService = {
     createCartForUser,
     addItemToCart,
-    removeItemFromCart
+    removeItemFromCart,
+    getAllFromDB,
+    getCartItems
 }
